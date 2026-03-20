@@ -363,7 +363,6 @@
 // CORE SETUP
 // ═══════════════════════════════════════
 const $=id=>document.getElementById(id);
-const LS_KEY='htk_training_log';
 const today=new Date();
 const todayStr=today.toISOString().slice(0,10);
 
@@ -405,18 +404,44 @@ $('progBlock').textContent=currentBlock?currentBlock.name:'--';
 $('progToday').textContent=todaySchedule;
 
 // ═══════════════════════════════════════
-// STORAGE
+// STORAGE (server-backed)
 // ═══════════════════════════════════════
-function getLog(){try{return JSON.parse(localStorage.getItem(LS_KEY))||[]}catch{return[]}}
-function saveLog(log){localStorage.setItem(LS_KEY,JSON.stringify(log))}
+let logCache=[];
+
+async function fetchLog(){
+  try{
+    const r=await fetch('/api/log');
+    if(r.ok) logCache=await r.json();
+  }catch(e){console.error('Failed to fetch log:',e)}
+  return logCache;
+}
+
+function getLog(){return logCache}
+
+async function saveEntry(entry){
+  try{
+    const r=await fetch('/api/log',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(entry)
+    });
+    if(r.ok) await fetchLog();
+  }catch(e){console.error('Failed to save entry:',e)}
+}
+
+async function deleteEntryByDate(date){
+  try{
+    const r=await fetch('/api/log/'+encodeURIComponent(date),{method:'DELETE'});
+    if(r.ok) await fetchLog();
+  }catch(e){console.error('Failed to delete entry:',e)}
+}
 
 // Get entries for last N days
 function getLastNDays(n){
-  const log=getLog();
   const cutoff=new Date(today);
   cutoff.setDate(cutoff.getDate()-n);
   const cutStr=cutoff.toISOString().slice(0,10);
-  return log.filter(e=>e.date>=cutStr).sort((a,b)=>a.date.localeCompare(b.date));
+  return logCache.filter(e=>e.date>=cutStr).sort((a,b)=>a.date.localeCompare(b.date));
 }
 
 // ═══════════════════════════════════════
@@ -754,7 +779,7 @@ document.querySelectorAll('#shoulderStatus .radio-pill').forEach(p=>{
   });
 });
 
-$('saveWodBtn').addEventListener('click',()=>{
+$('saveWodBtn').addEventListener('click',async()=>{
   if(!selectedSession){
     $('saveMsg').textContent='Pick a session type.';
     $('saveMsg').style.color='var(--red)';
@@ -762,8 +787,6 @@ $('saveWodBtn').addEventListener('click',()=>{
     setTimeout(()=>$('saveMsg').classList.remove('show'),2000);
     return;
   }
-  const log=getLog();
-  const existing=log.findIndex(e=>e.date===todayStr);
 
   const entry={
     date:todayStr,
@@ -776,10 +799,9 @@ $('saveWodBtn').addEventListener('click',()=>{
     savedAt:new Date().toISOString()
   };
 
-  if(existing>=0) log[existing]=entry;
-  else log.push(entry);
-  log.sort((a,b)=>b.date.localeCompare(a.date));
-  saveLog(log);
+  $('saveWodBtn').disabled=true;
+  await saveEntry(entry);
+  $('saveWodBtn').disabled=false;
 
   $('saveMsg').textContent='Saved.';
   $('saveMsg').style.color='var(--lime)';
@@ -959,13 +981,14 @@ function renderLogEntries(){
         ${e.avgHr?`<div class="log-row"><span>Avg HR</span><span>${e.avgHr} bpm</span></div>`:''}
         ${e.wod?`<div class="log-notes">${escHtml(e.wod)}</div>`:''}
         ${e.notes?`<div class="log-notes">${escHtml(e.notes)}</div>`:''}
-        <div class="log-actions"><button class="log-del" onclick="deleteEntry(${i})">delete</button></div>
+        <div class="log-actions"><button class="log-del" onclick="deleteEntry('${e.date}')">delete</button></div>
       </div>`;
   }).join('');
 }
 
-function deleteEntry(i){
-  const log=getLog();log.splice(i,1);saveLog(log);renderLogTab();
+async function deleteEntry(date){
+  await deleteEntryByDate(date);
+  renderLogTab();
 }
 
 // ═══════════════════════════════════════
@@ -1034,7 +1057,7 @@ function renderDonutChart(){
 // COACHING AI
 // ═══════════════════════════════════════
 $('coachBtn').addEventListener('click',async()=>{
-  const log=getLog().slice(0,14);
+  const log=logCache.slice(0,14);
   if(!log.length){
     $('coachOutput').style.display='block';
     $('coachOutput').textContent='No training data logged yet. Log some WODs first.';
@@ -1075,6 +1098,9 @@ $('coachBtn').addEventListener('click',async()=>{
 // INIT
 // ═══════════════════════════════════════
 async function init(){
+  // Load training log from server
+  await fetchLog();
+
   const params=new URLSearchParams(location.search);
   if(params.has('error')){
     $('loginView').querySelector('p').textContent='Auth failed. Try again.';

@@ -2,6 +2,7 @@ const express = require("express");
 const session = require("express-session");
 const crypto = require("crypto");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,29 @@ const WHOOP_CLIENT_ID = (process.env.WHOOP_CLIENT_ID || '').trim().replace(/^=+/
 const WHOOP_CLIENT_SECRET = (process.env.WHOOP_CLIENT_SECRET || '').trim().replace(/^=+/, '').replace(/^\++/, '');
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret-change-me";
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+// --- Training log file storage ---
+const DATA_DIR = path.join(__dirname, "data");
+const LOG_FILE = path.join(DATA_DIR, "log.json");
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(LOG_FILE)) {
+  fs.writeFileSync(LOG_FILE, "[]", "utf8");
+}
+
+function readLog() {
+  try {
+    return JSON.parse(fs.readFileSync(LOG_FILE, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function writeLog(entries) {
+  fs.writeFileSync(LOG_FILE, JSON.stringify(entries, null, 2), "utf8");
+}
 
 const WHOOP_AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth";
 const WHOOP_TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token";
@@ -232,10 +256,41 @@ app.get("/api/today", async (req, res) => {
   }
 });
 
-// --- Coaching route ---
+// --- Training log routes ---
 const ANTHROPIC_API_KEY = (process.env.ANTHROPIC_API_KEY || '').trim();
 
 app.use(express.json());
+
+app.get("/api/log", (req, res) => {
+  res.json(readLog());
+});
+
+app.post("/api/log", (req, res) => {
+  const entry = req.body;
+  if (!entry || !entry.date) {
+    return res.status(400).json({ error: "Entry must have a date" });
+  }
+
+  const log = readLog();
+  const existing = log.findIndex(e => e.date === entry.date);
+  if (existing >= 0) {
+    log[existing] = entry;
+  } else {
+    log.push(entry);
+  }
+  log.sort((a, b) => b.date.localeCompare(a.date));
+  writeLog(log);
+  res.json({ ok: true });
+});
+
+app.delete("/api/log/:date", (req, res) => {
+  const log = readLog();
+  const filtered = log.filter(e => e.date !== req.params.date);
+  writeLog(filtered);
+  res.json({ ok: true });
+});
+
+// --- Coaching route ---
 
 app.post("/api/coaching", async (req, res) => {
   if (!ANTHROPIC_API_KEY) {
