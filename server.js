@@ -7,8 +7,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- Config ---
-const WHOOP_CLIENT_ID = process.env.WHOOP_CLIENT_ID;
-const WHOOP_CLIENT_SECRET = process.env.WHOOP_CLIENT_SECRET;
+const WHOOP_CLIENT_ID = (process.env.WHOOP_CLIENT_ID || '').trim().replace(/^=+/, '').replace(/^\++/, '');
+const WHOOP_CLIENT_SECRET = (process.env.WHOOP_CLIENT_SECRET || '').trim().replace(/^=+/, '').replace(/^\++/, '');
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret-change-me";
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
