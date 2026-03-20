@@ -1,0 +1,17 @@
+{
+  "name": "harder-to-kill",
+  "version": "1.0.0",
+  "description": "Personal training dashboard powered by Whoop API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "express-session": "^1.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

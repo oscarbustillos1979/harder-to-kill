@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Harder to Kill</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #151515;
+      --surface-2: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --green: #00e676;
+      --yellow: #ffd600;
+      --red: #ff5252;
+      --blue: #448aff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      text-align: center;
+      padding: 24px 0 8px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .header .date {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* Login state */
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60dvh;
+      gap: 24px;
+    }
+
+    .login-container p {
+      color: var(--text-dim);
+      font-size: 15px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s;
+    }
+
+    .btn:active { opacity: 0.7; }
+
+    /* Dashboard grid */
+    .dashboard { display: none; padding-bottom: 32px; }
+
+    .hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .hero-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .hero-value {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .hero-suffix {
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--text-dim);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 16px;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .card-unit {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .card.wide {
+      grid-column: 1 / -1;
+    }
+
+    /* Status bar */
+    .status-bar {
+      text-align: center;
+      padding: 16px 0;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .status-bar a {
+      color: var(--text-dim);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Loading */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40dvh;
+      gap: 12px;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    /* Color helpers */
+    .color-green { color: var(--green); }
+    .color-yellow { color: var(--yellow); }
+    .color-red { color: var(--red); }
+    .color-blue { color: var(--blue); }
+
+    /* Error toast */
+    .error-toast {
+      background: var(--surface-2);
+      border: 1px solid var(--red);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 16px 0;
+      text-align: center;
+      font-size: 14px;
+      color: var(--red);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Harder to Kill</h1>
+    <div class="date" id="dateDisplay"></div>
+  </div>
+
+  <!-- Login -->
+  <div class="login-container" id="loginView">
+    <p>Connect your Whoop to see<br>today's recovery data.</p>
+    <a href="/auth/login" class="btn">Connect Whoop</a>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" id="loadingView" style="display:none">
+    <div class="spinner"></div>
+    <span>Pulling data...</span>
+  </div>
+
+  <!-- Error -->
+  <div class="error-toast" id="errorToast"></div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="hero-card">
+      <div class="hero-label">Recovery</div>
+      <div class="hero-value" id="recoveryScore">--<span class="hero-suffix">%</span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">HRV</div>
+        <div class="card-value" id="hrv">--</div>
+        <div class="card-unit">ms (rMSSD)</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Resting HR</div>
+        <div class="card-value" id="restingHr">--</div>
+        <div class="card-unit">bpm</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Sleep</div>
+        <div class="card-value" id="sleepScore">--<span style="font-size:18px;color:var(--text-dim)">%</span></div>
+        <div class="card-unit" id="sleepDuration"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Day Strain</div>
+        <div class="card-value" id="strain">--</div>
+        <div class="card-unit" id="calories"></div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span id="lastUpdated"></span>
+      &nbsp;&middot;&nbsp;
+      <a href="#" id="refreshBtn">Refresh</a>
+      &nbsp;&middot;&nbsp;
+      <a href="/auth/logout">Logout</a>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // Show today's date
+    const now = new Date();
+    $("dateDisplay").textContent = now.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+
+    function recoveryColor(score) {
+      if (score >= 67) return "color-green";
+      if (score >= 34) return "color-yellow";
+      return "color-red";
+    }
+
+    function strainColor(strain) {
+      if (strain >= 14) return "color-red";
+      if (strain >= 10) return "color-yellow";
+      return "color-blue";
+    }
+
+    function renderDashboard(data) {
+      $("loadingView").style.display = "none";
+      $("dashboard").style.display = "block";
+
+      if (data.recovery) {
+        const score = Math.round(data.recovery.score);
+        $("recoveryScore").innerHTML = `${score}<span class="hero-suffix">%</span>`;
+        $("recoveryScore").className = `hero-value ${recoveryColor(score)}`;
+
+        $("hrv").textContent = data.recovery.hrv != null
+          ? Math.round(data.recovery.hrv) : "--";
+
+        $("restingHr").textContent = data.recovery.resting_hr != null
+          ? Math.round(data.recovery.resting_hr) : "--";
+      }
+
+      if (data.sleep) {
+        const perf = data.sleep.performance != null
+          ? Math.round(data.sleep.performance) : "--";
+        $("sleepScore").innerHTML = `${perf}<span style="font-size:18px;color:var(--text-dim)">%</span>`;
+        $("sleepDuration").textContent = data.sleep.duration_hours != null
+          ? `${data.sleep.duration_hours} hrs` : "";
+      }
+
+      if (data.strain) {
+        const s = data.strain.day_strain != null
+          ? data.strain.day_strain.toFixed(1) : "--";
+        $("strain").textContent = s;
+        if (data.strain.day_strain != null) {
+          $("strain").className = `card-value ${strainColor(data.strain.day_strain)}`;
+        }
+        $("calories").textContent = data.strain.calories != null
+          ? `${data.strain.calories} cal` : "";
+      }
+
+      const time = new Date(data.timestamp).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      });
+      $("lastUpdated").textContent = `Updated ${time}`;
+    }
+
+    function showError(msg) {
+      $("loadingView").style.display = "none";
+      $("errorToast").textContent = msg;
+      $("errorToast").style.display = "block";
+    }
+
+    async function loadData() {
+      $("loginView").style.display = "none";
+      $("dashboard").style.display = "none";
+      $("errorToast").style.display = "none";
+      $("loadingView").style.display = "flex";
+
+      try {
+        const res = await fetch("/api/today");
+        if (res.status === 401) {
+          $("loadingView").style.display = "none";
+          $("loginView").style.display = "flex";
+          return;
+        }
+        if (!res.ok) throw new Error("Failed to load data");
+        const data = await res.json();
+        renderDashboard(data);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    // Check auth and load
+    async function init() {
+      // Check URL params for errors
+      const params = new URLSearchParams(location.search);
+      if (params.has("error")) {
+        showError("Authentication failed. Please try again.");
+        history.replaceState(null, "", "/");
+        return;
+      }
+
+      try {
+        const res = await fetch("/auth/status");
+        const { authenticated } = await res.json();
+        if (authenticated) {
+          loadData();
+        } else {
+          $("loginView").style.display = "flex";
+        }
+      } catch {
+        $("loginView").style.display = "flex";
+      }
+    }
+
+    $("refreshBtn").addEventListener("click", (e) => {
+      e.preventDefault();
+      loadData();
+    });
+
+    init();
+  </script>
+</body>
+</html>
