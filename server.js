@@ -232,6 +232,24 @@ app.get("/api/today", async (req, res) => {
   }
 });
 
+// --- Debug route (temporary) ---
+app.get("/debug", (req, res) => {
+  const authParams = new URLSearchParams({
+    response_type: "code",
+    client_id: WHOOP_CLIENT_ID || "",
+    redirect_uri: `${BASE_URL}/auth/callback`,
+    scope: SCOPES,
+    state: "debug-test",
+  });
+
+  res.json({
+    client_id_prefix: WHOOP_CLIENT_ID ? WHOOP_CLIENT_ID.substring(0, 8) : "NOT SET",
+    authorization_url: `${WHOOP_AUTH_URL}?${authParams.toString()}`,
+    base_url: BASE_URL,
+    base_url_set: !!process.env.BASE_URL,
+  });
+});
+
 // --- Serve dashboard ---
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
