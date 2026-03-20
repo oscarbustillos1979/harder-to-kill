@@ -232,6 +232,84 @@ app.get("/api/today", async (req, res) => {
   }
 });
 
+// --- Coaching route ---
+const ANTHROPIC_API_KEY = (process.env.ANTHROPIC_API_KEY || '').trim();
+
+app.use(express.json());
+
+app.post("/api/coaching", async (req, res) => {
+  if (!ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
+  }
+
+  const { log } = req.body;
+  if (!log || !Array.length) {
+    return res.status(400).json({ error: "No training log provided" });
+  }
+
+  const logSummary = log.map(entry => {
+    const parts = [`Date: ${entry.date}`, `Session: ${entry.session}`];
+    if (entry.wod) parts.push(`WOD: ${entry.wod}`);
+    if (entry.shoulder && entry.shoulder !== 'none') parts.push(`Shoulder: ${entry.shoulder}`);
+    if (entry.notes) parts.push(`Notes: ${entry.notes}`);
+    if (entry.whoop?.recovery) {
+      const r = entry.whoop.recovery;
+      parts.push(`Recovery: ${Math.round(r.score)}%, HRV: ${r.hrv != null ? Math.round(r.hrv) : '-'}ms, RHR: ${r.resting_hr != null ? Math.round(r.resting_hr) : '-'}bpm`);
+    }
+    if (entry.whoop?.sleep) {
+      parts.push(`Sleep: ${entry.whoop.sleep.performance != null ? Math.round(entry.whoop.sleep.performance) + '%' : '-'}`);
+    }
+    if (entry.whoop?.strain) {
+      parts.push(`Strain: ${entry.whoop.strain.day_strain != null ? entry.whoop.strain.day_strain.toFixed(1) : '-'}`);
+    }
+    return parts.join(' | ');
+  }).join('\n');
+
+  try {
+    const apiRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        messages: [{
+          role: "user",
+          content: `You are an elite CrossFit and endurance coach analyzing a 14-day training log with Whoop biometric data. The athlete has a recurring shoulder issue to monitor.
+
+Analyze this training log and provide:
+1. RECOVERY TREND — are they trending up or down? Any red flags?
+2. TRAINING LOAD — is volume/intensity appropriate given recovery scores?
+3. SHOULDER STATUS — any concerning patterns with the shoulder?
+4. SLEEP — is sleep quality supporting recovery?
+5. RECOMMENDATION — what should they do today/this week?
+
+Keep it concise, direct, and actionable. Use short paragraphs. No fluff.
+
+TRAINING LOG:
+${logSummary}`
+        }],
+      }),
+    });
+
+    if (!apiRes.ok) {
+      const text = await apiRes.text();
+      console.error("Anthropic API error:", apiRes.status, text);
+      return res.status(502).json({ error: "AI analysis failed" });
+    }
+
+    const data = await apiRes.json();
+    const analysis = data.content?.[0]?.text || "No analysis returned.";
+    res.json({ analysis });
+  } catch (err) {
+    console.error("Coaching error:", err.message);
+    res.status(500).json({ error: "Failed to generate coaching analysis" });
+  }
+});
+
 // --- Debug route (temporary) ---
 app.get("/debug", (req, res) => {
   const authParams = new URLSearchParams({

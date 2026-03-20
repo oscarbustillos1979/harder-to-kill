@@ -5,396 +5,662 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Harder to Kill</title>
+  <title>HARDER TO KILL</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg: #0a0a0a;
-      --surface: #151515;
-      --surface-2: #1e1e1e;
-      --border: #2a2a2a;
-      --text: #e8e8e8;
-      --text-dim: #888;
-      --green: #00e676;
-      --yellow: #ffd600;
-      --red: #ff5252;
-      --blue: #448aff;
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#0a0a0a;--s1:#111;--s2:#1a1a1a;--s3:#222;
+      --border:#2a2a2a;--text:#d4d4d4;--dim:#666;
+      --lime:#a3e635;--lime-dim:#65a30d;
+      --red:#ef4444;--yellow:#eab308;--green:#22c55e;
+      --blue:#3b82f6;
+    }
+    html,body{height:100%}
+    body{
+      font-family:"SF Mono","Fira Code","Cascadia Code",monospace;
+      background:var(--bg);color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      padding:env(safe-area-inset-top) 0 0;
+      overflow-x:hidden;
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-      -webkit-font-smoothing: antialiased;
+    /* ── NAV TABS ── */
+    .tab-bar{
+      position:fixed;bottom:0;left:0;right:0;
+      display:flex;background:var(--s1);
+      border-top:1px solid var(--border);
+      padding:0 0 env(safe-area-inset-bottom);
+      z-index:100;
+    }
+    .tab-btn{
+      flex:1;padding:10px 0 8px;text-align:center;
+      background:none;border:none;color:var(--dim);
+      font-family:inherit;font-size:10px;font-weight:600;
+      letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+      transition:color .2s;
+    }
+    .tab-btn.active{color:var(--lime)}
+    .tab-btn svg{display:block;margin:0 auto 3px;width:20px;height:20px}
+
+    .tab-panel{display:none;padding:16px 16px 80px;min-height:100dvh}
+    .tab-panel.active{display:block}
+
+    /* ── HEADER ── */
+    .page-hdr{
+      text-align:center;padding:20px 0 12px;
+    }
+    .page-hdr h1{
+      font-size:16px;font-weight:800;letter-spacing:3px;
+      text-transform:uppercase;color:var(--lime);
+    }
+    .page-hdr .date{font-size:11px;color:var(--dim);margin-top:4px}
+
+    /* ── LOGIN ── */
+    .login-view{
+      display:flex;flex-direction:column;align-items:center;
+      justify-content:center;min-height:70dvh;gap:20px;
+    }
+    .login-view p{color:var(--dim);font-size:13px;text-align:center;line-height:1.6}
+    .btn{
+      display:inline-block;padding:12px 28px;
+      background:var(--lime);color:#000;
+      font-family:inherit;font-size:13px;font-weight:700;
+      letter-spacing:1px;text-transform:uppercase;
+      text-decoration:none;border:none;border-radius:8px;cursor:pointer;
+      transition:opacity .2s;
+    }
+    .btn:active{opacity:.7}
+    .btn-outline{
+      background:transparent;border:1px solid var(--lime);
+      color:var(--lime);
+    }
+    .btn-sm{padding:8px 16px;font-size:11px}
+    .btn:disabled{opacity:.4;cursor:default}
+
+    /* ── CARDS ── */
+    .hero{
+      background:var(--s1);border:1px solid var(--border);
+      border-radius:16px;padding:24px;text-align:center;margin:12px 0;
+    }
+    .hero-label{
+      font-size:10px;font-weight:700;letter-spacing:2px;
+      text-transform:uppercase;color:var(--dim);margin-bottom:6px;
+    }
+    .hero-val{font-size:56px;font-weight:800;line-height:1}
+    .hero-sfx{font-size:20px;font-weight:400;color:var(--dim)}
+    .hero-note{
+      font-size:11px;color:var(--dim);margin-top:10px;
+      font-style:italic;line-height:1.4;
     }
 
-    .header {
-      text-align: center;
-      padding: 24px 0 8px;
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+    .card{
+      background:var(--s1);border:1px solid var(--border);
+      border-radius:12px;padding:16px 14px;
+    }
+    .card-label{
+      font-size:9px;font-weight:700;letter-spacing:1.5px;
+      text-transform:uppercase;color:var(--dim);margin-bottom:6px;
+    }
+    .card-val{font-size:28px;font-weight:700;line-height:1.1}
+    .card-unit{font-size:10px;color:var(--dim);margin-top:2px}
+    .card.wide{grid-column:1/-1}
+
+    .c-green{color:var(--green)} .c-yellow{color:var(--yellow)}
+    .c-red{color:var(--red)} .c-lime{color:var(--lime)} .c-blue{color:var(--blue)}
+
+    /* ── SPARKLINES ── */
+    .spark-section{margin:16px 0}
+    .spark-row{
+      background:var(--s1);border:1px solid var(--border);
+      border-radius:12px;padding:14px;margin:8px 0;
+      display:flex;align-items:center;gap:12px;
+    }
+    .spark-info{flex:0 0 70px}
+    .spark-info .card-label{margin-bottom:2px}
+    .spark-info .card-val{font-size:18px}
+    .spark-canvas{flex:1;height:40px}
+
+    /* ── FORM ── */
+    .form-section{margin:16px 0}
+    .form-group{margin-bottom:14px}
+    .form-group label{
+      display:block;font-size:10px;font-weight:700;
+      letter-spacing:1.5px;text-transform:uppercase;
+      color:var(--dim);margin-bottom:6px;
+    }
+    select,textarea,input[type="text"]{
+      width:100%;padding:10px 12px;
+      background:var(--s2);border:1px solid var(--border);
+      border-radius:8px;color:var(--text);
+      font-family:inherit;font-size:13px;
+      outline:none;resize:vertical;
+    }
+    select:focus,textarea:focus,input:focus{border-color:var(--lime)}
+    textarea{min-height:80px}
+    .radio-group{display:flex;gap:8px;flex-wrap:wrap}
+    .radio-pill{
+      padding:7px 14px;background:var(--s2);
+      border:1px solid var(--border);border-radius:20px;
+      font-family:inherit;font-size:11px;color:var(--dim);
+      cursor:pointer;transition:all .2s;
+    }
+    .radio-pill.active{border-color:var(--lime);color:var(--lime)}
+    .form-msg{
+      text-align:center;font-size:12px;color:var(--lime);
+      margin-top:12px;opacity:0;transition:opacity .3s;
+    }
+    .form-msg.show{opacity:1}
+
+    /* ── LOG LIST ── */
+    .log-entry{
+      background:var(--s1);border:1px solid var(--border);
+      border-radius:12px;padding:14px;margin:8px 0;
+    }
+    .log-date{
+      font-size:11px;font-weight:700;color:var(--lime);
+      letter-spacing:1px;margin-bottom:6px;
+    }
+    .log-row{
+      display:flex;justify-content:space-between;
+      font-size:12px;color:var(--dim);padding:2px 0;
+    }
+    .log-row span:last-child{color:var(--text)}
+    .log-notes{
+      font-size:11px;color:var(--dim);
+      margin-top:6px;font-style:italic;
+      border-top:1px solid var(--border);padding-top:6px;
+    }
+    .log-actions{
+      display:flex;gap:8px;margin-top:8px;padding-top:8px;
+      border-top:1px solid var(--border);
+    }
+    .log-del{
+      background:none;border:1px solid var(--border);
+      border-radius:6px;padding:4px 10px;
+      font-family:inherit;font-size:10px;color:var(--red);
+      cursor:pointer;letter-spacing:.5px;
     }
 
-    .header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
+    /* ── COACHING ── */
+    .coaching-output{
+      background:var(--s1);border:1px solid var(--border);
+      border-radius:12px;padding:16px;margin:16px 0;
+      font-size:12px;line-height:1.7;white-space:pre-wrap;
     }
 
-    .header .date {
-      font-size: 13px;
-      color: var(--text-dim);
-      margin-top: 4px;
+    /* ── MISC ── */
+    .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 0;color:var(--dim);font-size:13px}
+    .spinner{
+      width:18px;height:18px;border:2px solid var(--border);
+      border-top-color:var(--lime);border-radius:50%;
+      animation:spin .7s linear infinite;
     }
-
-    /* Login state */
-    .login-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60dvh;
-      gap: 24px;
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty{text-align:center;color:var(--dim);font-size:12px;padding:40px 0}
+    .status-line{
+      text-align:center;font-size:10px;color:var(--dim);
+      margin:12px 0;letter-spacing:.5px;
     }
-
-    .login-container p {
-      color: var(--text-dim);
-      font-size: 15px;
-      text-align: center;
-      line-height: 1.5;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 14px 32px;
-      background: var(--text);
-      color: var(--bg);
-      font-size: 15px;
-      font-weight: 600;
-      text-decoration: none;
-      border-radius: 12px;
-      letter-spacing: 0.5px;
-      transition: opacity 0.2s;
-    }
-
-    .btn:active { opacity: 0.7; }
-
-    /* Dashboard grid */
-    .dashboard { display: none; padding-bottom: 32px; }
-
-    .hero-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px 24px;
-      text-align: center;
-      margin: 16px 0;
-    }
-
-    .hero-label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-    }
-
-    .hero-value {
-      font-size: 64px;
-      font-weight: 800;
-      line-height: 1;
-    }
-
-    .hero-suffix {
-      font-size: 24px;
-      font-weight: 400;
-      color: var(--text-dim);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px 16px;
-    }
-
-    .card-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-    }
-
-    .card-value {
-      font-size: 32px;
-      font-weight: 700;
-      line-height: 1.1;
-    }
-
-    .card-unit {
-      font-size: 13px;
-      color: var(--text-dim);
-      margin-top: 2px;
-    }
-
-    .card.wide {
-      grid-column: 1 / -1;
-    }
-
-    /* Status bar */
-    .status-bar {
-      text-align: center;
-      padding: 16px 0;
-      font-size: 12px;
-      color: var(--text-dim);
-    }
-
-    .status-bar a {
-      color: var(--text-dim);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
-    /* Loading */
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--border);
-      border-top-color: var(--text);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loading-state {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 40dvh;
-      gap: 12px;
-      color: var(--text-dim);
-      font-size: 14px;
-    }
-
-    /* Color helpers */
-    .color-green { color: var(--green); }
-    .color-yellow { color: var(--yellow); }
-    .color-red { color: var(--red); }
-    .color-blue { color: var(--blue); }
-
-    /* Error toast */
-    .error-toast {
-      background: var(--surface-2);
-      border: 1px solid var(--red);
-      border-radius: 12px;
-      padding: 16px;
-      margin: 16px 0;
-      text-align: center;
-      font-size: 14px;
-      color: var(--red);
-      display: none;
-    }
+    .status-line a{color:var(--dim);text-decoration:underline;text-underline-offset:2px}
   </style>
 </head>
 <body>
 
-  <div class="header">
+<!-- ════════════ TAB: TODAY ════════════ -->
+<div class="tab-panel active" id="panelToday">
+  <div class="page-hdr">
     <h1>Harder to Kill</h1>
     <div class="date" id="dateDisplay"></div>
   </div>
 
-  <!-- Login -->
-  <div class="login-container" id="loginView">
-    <p>Connect your Whoop to see<br>today's recovery data.</p>
+  <div class="login-view" id="loginView">
+    <p>Connect your Whoop to pull<br>recovery &amp; strain data.</p>
     <a href="/auth/login" class="btn">Connect Whoop</a>
   </div>
 
-  <!-- Loading -->
-  <div class="loading-state" id="loadingView" style="display:none">
-    <div class="spinner"></div>
-    <span>Pulling data...</span>
+  <div class="loading" id="todayLoading" style="display:none">
+    <div class="spinner"></div><span>Pulling data...</span>
   </div>
 
-  <!-- Error -->
-  <div class="error-toast" id="errorToast"></div>
-
-  <!-- Dashboard -->
-  <div class="dashboard" id="dashboard">
-    <div class="hero-card">
+  <div id="todayContent" style="display:none">
+    <div class="hero" id="heroCard">
       <div class="hero-label">Recovery</div>
-      <div class="hero-value" id="recoveryScore">--<span class="hero-suffix">%</span></div>
+      <div class="hero-val" id="recoveryVal">--<span class="hero-sfx">%</span></div>
+      <div class="hero-note" id="recoveryNote"></div>
     </div>
 
     <div class="grid">
       <div class="card">
         <div class="card-label">HRV</div>
-        <div class="card-value" id="hrv">--</div>
-        <div class="card-unit">ms (rMSSD)</div>
+        <div class="card-val" id="hrvVal">--</div>
+        <div class="card-unit">ms rMSSD</div>
       </div>
-
       <div class="card">
         <div class="card-label">Resting HR</div>
-        <div class="card-value" id="restingHr">--</div>
+        <div class="card-val" id="rhrVal">--</div>
         <div class="card-unit">bpm</div>
       </div>
-
       <div class="card">
         <div class="card-label">Sleep</div>
-        <div class="card-value" id="sleepScore">--<span style="font-size:18px;color:var(--text-dim)">%</span></div>
-        <div class="card-unit" id="sleepDuration"></div>
+        <div class="card-val" id="sleepVal">--<span style="font-size:16px;color:var(--dim)">%</span></div>
+        <div class="card-unit" id="sleepDur"></div>
       </div>
-
       <div class="card">
         <div class="card-label">Day Strain</div>
-        <div class="card-value" id="strain">--</div>
-        <div class="card-unit" id="calories"></div>
+        <div class="card-val" id="strainVal">--</div>
+        <div class="card-unit" id="strainCal"></div>
       </div>
     </div>
 
-    <div class="status-bar">
+    <!-- Sparklines -->
+    <div class="spark-section" id="sparkSection">
+      <div class="spark-row">
+        <div class="spark-info">
+          <div class="card-label">Recovery 7d</div>
+        </div>
+        <canvas class="spark-canvas" id="sparkRecovery"></canvas>
+      </div>
+      <div class="spark-row">
+        <div class="spark-info">
+          <div class="card-label">HRV 7d</div>
+        </div>
+        <canvas class="spark-canvas" id="sparkHrv"></canvas>
+      </div>
+      <div class="spark-row">
+        <div class="spark-info">
+          <div class="card-label">RHR 7d</div>
+        </div>
+        <canvas class="spark-canvas" id="sparkRhr"></canvas>
+      </div>
+    </div>
+
+    <div class="status-line">
       <span id="lastUpdated"></span>
-      &nbsp;&middot;&nbsp;
-      <a href="#" id="refreshBtn">Refresh</a>
-      &nbsp;&middot;&nbsp;
-      <a href="/auth/logout">Logout</a>
+      &middot; <a href="#" id="refreshBtn">refresh</a>
+      &middot; <a href="/auth/logout">logout</a>
     </div>
   </div>
+</div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
+<!-- ════════════ TAB: LOG WOD ════════════ -->
+<div class="tab-panel" id="panelWod">
+  <div class="page-hdr"><h1>Log WOD</h1><div class="date" id="wodDate"></div></div>
 
-    // Show today's date
-    const now = new Date();
-    $("dateDisplay").textContent = now.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
+  <div class="form-section">
+    <div class="form-group">
+      <label>Session Type</label>
+      <div class="radio-group" id="sessionType">
+        <div class="radio-pill" data-val="CrossFit">CrossFit</div>
+        <div class="radio-pill" data-val="Zone2">Zone 2</div>
+        <div class="radio-pill" data-val="VO2max">VO2max</div>
+        <div class="radio-pill" data-val="Strength">Strength</div>
+        <div class="radio-pill" data-val="Rest">Rest</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>WOD Details</label>
+      <textarea id="wodDetails" placeholder="Rx / scaled, weights, rounds, time..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Shoulder Status</label>
+      <div class="radio-group" id="shoulderStatus">
+        <div class="radio-pill" data-val="none">None</div>
+        <div class="radio-pill" data-val="dull">Dull</div>
+        <div class="radio-pill" data-val="sharp">Sharp</div>
+        <div class="radio-pill" data-val="modified">Modified</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="wodNotes" placeholder="Energy, mood, anything worth noting..."></textarea>
+    </div>
+
+    <button class="btn" style="width:100%" id="saveWodBtn">Save Entry</button>
+    <div class="form-msg" id="saveMsg">Saved.</div>
+  </div>
+</div>
+
+<!-- ════════════ TAB: COACHING ════════════ -->
+<div class="tab-panel" id="panelCoach">
+  <div class="page-hdr"><h1>AI Coach</h1><div class="date">14-day analysis</div></div>
+
+  <div style="text-align:center;padding:20px 0">
+    <button class="btn" id="coachBtn">Analyze My Training</button>
+  </div>
+
+  <div class="loading" id="coachLoading" style="display:none">
+    <div class="spinner"></div><span>Claude is thinking...</span>
+  </div>
+
+  <div class="coaching-output" id="coachOutput" style="display:none"></div>
+</div>
+
+<!-- ════════════ TAB: LOG HISTORY ════════════ -->
+<div class="tab-panel" id="panelLog">
+  <div class="page-hdr"><h1>Training Log</h1></div>
+  <div id="logList"></div>
+</div>
+
+<!-- ════════════ BOTTOM NAV ════════════ -->
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="panelToday">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Today
+  </button>
+  <button class="tab-btn" data-tab="panelWod">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    WOD
+  </button>
+  <button class="tab-btn" data-tab="panelCoach">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    Coach
+  </button>
+  <button class="tab-btn" data-tab="panelLog">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Log
+  </button>
+</nav>
+
+<script>
+// ── Helpers ──
+const $=id=>document.getElementById(id);
+const LS_KEY='htk_training_log';
+const today=new Date();
+const todayStr=today.toISOString().slice(0,10);
+
+function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+
+$('dateDisplay').textContent=today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+$('wodDate').textContent=$('dateDisplay').textContent;
+
+// ── Storage ──
+function getLog(){try{return JSON.parse(localStorage.getItem(LS_KEY))||[]}catch{return[]}}
+function saveLog(log){localStorage.setItem(LS_KEY,JSON.stringify(log))}
+
+// ── Tabs ──
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    $(btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='panelLog') renderLog();
+  });
+});
+
+// ── Recovery color + note ──
+function recColor(s){
+  if(s>=67) return 'c-green';
+  if(s>=34) return 'c-yellow';
+  return 'c-red';
+}
+function recNote(s){
+  if(s>=80) return 'Peak readiness. Push hard today.';
+  if(s>=67) return 'Green zone. Good to train heavy.';
+  if(s>=50) return 'Moderate recovery. Train smart.';
+  if(s>=34) return 'Yellow zone. Consider lower intensity.';
+  return 'Red zone. Prioritize rest and mobility.';
+}
+function strainColor(s){
+  if(s>=18) return 'c-red';
+  if(s>=14) return 'c-yellow';
+  return 'c-lime';
+}
+
+// ── Today data ──
+let cachedToday=null;
+
+async function loadToday(){
+  $('loginView').style.display='none';
+  $('todayContent').style.display='none';
+  $('todayLoading').style.display='flex';
+
+  try{
+    const r=await fetch('/api/today');
+    if(r.status===401){
+      $('todayLoading').style.display='none';
+      $('loginView').style.display='flex';
+      return;
+    }
+    if(!r.ok) throw new Error('Failed');
+    const d=await r.json();
+    cachedToday=d;
+    renderToday(d);
+  }catch(e){
+    $('todayLoading').style.display='none';
+    $('todayContent').style.display='block';
+    $('recoveryVal').innerHTML='ERR';
+  }
+}
+
+function renderToday(d){
+  $('todayLoading').style.display='none';
+  $('todayContent').style.display='block';
+
+  if(d.recovery){
+    const s=Math.round(d.recovery.score);
+    $('recoveryVal').innerHTML=s+'<span class="hero-sfx">%</span>';
+    $('recoveryVal').className='hero-val '+recColor(s);
+    $('recoveryNote').textContent=recNote(s);
+    $('hrvVal').textContent=d.recovery.hrv!=null?Math.round(d.recovery.hrv):'--';
+    $('rhrVal').textContent=d.recovery.resting_hr!=null?Math.round(d.recovery.resting_hr):'--';
+  }
+  if(d.sleep){
+    const p=d.sleep.performance!=null?Math.round(d.sleep.performance):'--';
+    $('sleepVal').innerHTML=p+'<span style="font-size:16px;color:var(--dim)">%</span>';
+    $('sleepDur').textContent=d.sleep.duration_hours!=null?d.sleep.duration_hours+' hrs':'';
+  }
+  if(d.strain){
+    const s=d.strain.day_strain!=null?d.strain.day_strain.toFixed(1):'--';
+    $('strainVal').textContent=s;
+    if(d.strain.day_strain!=null) $('strainVal').className='card-val '+strainColor(d.strain.day_strain);
+    $('strainCal').textContent=d.strain.calories!=null?d.strain.calories+' cal':'';
+  }
+
+  const t=new Date(d.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  $('lastUpdated').textContent='updated '+t;
+
+  renderSparklines();
+}
+
+$('refreshBtn').addEventListener('click',e=>{e.preventDefault();loadToday()});
+
+// ── Sparklines ──
+function renderSparklines(){
+  const log=getLog().slice(-7);
+  if(log.length<2){$('sparkSection').style.display='none';return}
+  $('sparkSection').style.display='block';
+
+  const recoveries=log.map(e=>e.whoop?.recovery?.score).filter(v=>v!=null);
+  const hrvs=log.map(e=>e.whoop?.recovery?.hrv).filter(v=>v!=null);
+  const rhrs=log.map(e=>e.whoop?.recovery?.resting_hr).filter(v=>v!=null);
+
+  if(recoveries.length>=2) drawSpark('sparkRecovery',recoveries,'#22c55e');
+  if(hrvs.length>=2) drawSpark('sparkHrv',hrvs,'#3b82f6');
+  if(rhrs.length>=2) drawSpark('sparkRhr',rhrs,'#eab308');
+}
+
+function drawSpark(canvasId,data,color){
+  const canvas=$(canvasId);
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const w=canvas.clientWidth;
+  const h=canvas.clientHeight;
+  canvas.width=w*dpr;canvas.height=h*dpr;
+  ctx.scale(dpr,dpr);
+
+  const min=Math.min(...data);
+  const max=Math.max(...data);
+  const range=max-min||1;
+  const pad=4;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.beginPath();
+  ctx.strokeStyle=color;
+  ctx.lineWidth=2;
+  ctx.lineJoin='round';
+
+  data.forEach((v,i)=>{
+    const x=pad+((w-2*pad)/(data.length-1))*i;
+    const y=h-pad-((v-min)/range)*(h-2*pad);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // dot on last point
+  const lx=w-pad;
+  const ly=h-pad-((data[data.length-1]-min)/range)*(h-2*pad);
+  ctx.beginPath();
+  ctx.arc(lx,ly,3,0,Math.PI*2);
+  ctx.fillStyle=color;
+  ctx.fill();
+}
+
+// ── WOD Form ──
+let selectedSession='';
+let selectedShoulder='none';
+
+document.querySelectorAll('#sessionType .radio-pill').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('#sessionType .radio-pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    selectedSession=p.dataset.val;
+  });
+});
+
+document.querySelectorAll('#shoulderStatus .radio-pill').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('#shoulderStatus .radio-pill').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    selectedShoulder=p.dataset.val;
+  });
+});
+
+$('saveWodBtn').addEventListener('click',()=>{
+  if(!selectedSession){
+    $('saveMsg').textContent='Pick a session type.';
+    $('saveMsg').style.color='var(--red)';
+    $('saveMsg').classList.add('show');
+    setTimeout(()=>$('saveMsg').classList.remove('show'),2000);
+    return;
+  }
+
+  const log=getLog();
+  const existing=log.findIndex(e=>e.date===todayStr);
+
+  const entry={
+    date:todayStr,
+    session:selectedSession,
+    wod:$('wodDetails').value.trim(),
+    shoulder:selectedShoulder,
+    notes:$('wodNotes').value.trim(),
+    whoop:cachedToday||null,
+    savedAt:new Date().toISOString()
+  };
+
+  if(existing>=0) log[existing]=entry;
+  else log.push(entry);
+
+  log.sort((a,b)=>b.date.localeCompare(a.date));
+  saveLog(log);
+
+  $('saveMsg').textContent='Saved.';
+  $('saveMsg').style.color='var(--lime)';
+  $('saveMsg').classList.add('show');
+  setTimeout(()=>$('saveMsg').classList.remove('show'),2000);
+
+  renderSparklines();
+});
+
+// ── Log History ──
+function renderLog(){
+  const log=getLog();
+  if(!log.length){$('logList').innerHTML='<div class="empty">No entries yet.</div>';return}
+
+  $('logList').innerHTML=log.map((e,i)=>{
+    const rec=e.whoop?.recovery;
+    const sl=e.whoop?.sleep;
+    const st=e.whoop?.strain;
+    return `
+      <div class="log-entry">
+        <div class="log-date">${fmtDate(e.date)} &mdash; ${e.session}</div>
+        ${rec?`
+        <div class="log-row"><span>Recovery</span><span class="${recColor(rec.score)}">${Math.round(rec.score)}%</span></div>
+        <div class="log-row"><span>HRV</span><span>${rec.hrv!=null?Math.round(rec.hrv):'-'} ms</span></div>
+        <div class="log-row"><span>RHR</span><span>${rec.resting_hr!=null?Math.round(rec.resting_hr):'-'} bpm</span></div>`:''}
+        ${sl?`<div class="log-row"><span>Sleep</span><span>${sl.performance!=null?Math.round(sl.performance)+'%':'-'}</span></div>`:''}
+        ${st?`<div class="log-row"><span>Strain</span><span>${st.day_strain!=null?st.day_strain.toFixed(1):'-'}</span></div>`:''}
+        ${e.shoulder&&e.shoulder!=='none'?`<div class="log-row"><span>Shoulder</span><span style="color:var(--yellow)">${e.shoulder}</span></div>`:''}
+        ${e.wod?`<div class="log-notes">${escHtml(e.wod)}</div>`:''}
+        ${e.notes?`<div class="log-notes">${escHtml(e.notes)}</div>`:''}
+        <div class="log-actions"><button class="log-del" onclick="deleteEntry(${i})">delete</button></div>
+      </div>`;
+  }).join('');
+}
+
+function deleteEntry(i){
+  const log=getLog();
+  log.splice(i,1);
+  saveLog(log);
+  renderLog();
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ── Coaching ──
+$('coachBtn').addEventListener('click',async()=>{
+  const log=getLog().slice(0,14);
+  if(log.length===0){
+    $('coachOutput').style.display='block';
+    $('coachOutput').textContent='No training data logged yet. Log some WODs first.';
+    return;
+  }
+
+  $('coachBtn').disabled=true;
+  $('coachLoading').style.display='flex';
+  $('coachOutput').style.display='none';
+
+  try{
+    const r=await fetch('/api/coaching',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({log})
     });
+    if(!r.ok) throw new Error('Request failed');
+    const d=await r.json();
+    $('coachOutput').textContent=d.analysis;
+    $('coachOutput').style.display='block';
+  }catch(e){
+    $('coachOutput').textContent='Failed to get coaching analysis. Try again.';
+    $('coachOutput').style.display='block';
+  }finally{
+    $('coachBtn').disabled=false;
+    $('coachLoading').style.display='none';
+  }
+});
 
-    function recoveryColor(score) {
-      if (score >= 67) return "color-green";
-      if (score >= 34) return "color-yellow";
-      return "color-red";
-    }
-
-    function strainColor(strain) {
-      if (strain >= 14) return "color-red";
-      if (strain >= 10) return "color-yellow";
-      return "color-blue";
-    }
-
-    function renderDashboard(data) {
-      $("loadingView").style.display = "none";
-      $("dashboard").style.display = "block";
-
-      if (data.recovery) {
-        const score = Math.round(data.recovery.score);
-        $("recoveryScore").innerHTML = `${score}<span class="hero-suffix">%</span>`;
-        $("recoveryScore").className = `hero-value ${recoveryColor(score)}`;
-
-        $("hrv").textContent = data.recovery.hrv != null
-          ? Math.round(data.recovery.hrv) : "--";
-
-        $("restingHr").textContent = data.recovery.resting_hr != null
-          ? Math.round(data.recovery.resting_hr) : "--";
-      }
-
-      if (data.sleep) {
-        const perf = data.sleep.performance != null
-          ? Math.round(data.sleep.performance) : "--";
-        $("sleepScore").innerHTML = `${perf}<span style="font-size:18px;color:var(--text-dim)">%</span>`;
-        $("sleepDuration").textContent = data.sleep.duration_hours != null
-          ? `${data.sleep.duration_hours} hrs` : "";
-      }
-
-      if (data.strain) {
-        const s = data.strain.day_strain != null
-          ? data.strain.day_strain.toFixed(1) : "--";
-        $("strain").textContent = s;
-        if (data.strain.day_strain != null) {
-          $("strain").className = `card-value ${strainColor(data.strain.day_strain)}`;
-        }
-        $("calories").textContent = data.strain.calories != null
-          ? `${data.strain.calories} cal` : "";
-      }
-
-      const time = new Date(data.timestamp).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-      });
-      $("lastUpdated").textContent = `Updated ${time}`;
-    }
-
-    function showError(msg) {
-      $("loadingView").style.display = "none";
-      $("errorToast").textContent = msg;
-      $("errorToast").style.display = "block";
-    }
-
-    async function loadData() {
-      $("loginView").style.display = "none";
-      $("dashboard").style.display = "none";
-      $("errorToast").style.display = "none";
-      $("loadingView").style.display = "flex";
-
-      try {
-        const res = await fetch("/api/today");
-        if (res.status === 401) {
-          $("loadingView").style.display = "none";
-          $("loginView").style.display = "flex";
-          return;
-        }
-        if (!res.ok) throw new Error("Failed to load data");
-        const data = await res.json();
-        renderDashboard(data);
-      } catch (err) {
-        showError(err.message);
-      }
-    }
-
-    // Check auth and load
-    async function init() {
-      // Check URL params for errors
-      const params = new URLSearchParams(location.search);
-      if (params.has("error")) {
-        showError("Authentication failed. Please try again.");
-        history.replaceState(null, "", "/");
-        return;
-      }
-
-      try {
-        const res = await fetch("/auth/status");
-        const { authenticated } = await res.json();
-        if (authenticated) {
-          loadData();
-        } else {
-          $("loginView").style.display = "flex";
-        }
-      } catch {
-        $("loginView").style.display = "flex";
-      }
-    }
-
-    $("refreshBtn").addEventListener("click", (e) => {
-      e.preventDefault();
-      loadData();
-    });
-
-    init();
-  </script>
+// ── Init ──
+async function init(){
+  const params=new URLSearchParams(location.search);
+  if(params.has('error')){
+    $('loginView').querySelector('p').textContent='Auth failed. Try again.';
+    history.replaceState(null,'','/');
+    return;
+  }
+  try{
+    const r=await fetch('/auth/status');
+    const{authenticated}=await r.json();
+    if(authenticated) loadToday();
+    else $('loginView').style.display='flex';
+  }catch{
+    $('loginView').style.display='flex';
+  }
+}
+init();
+</script>
 </body>
 </html>
