@@ -242,8 +242,8 @@ app.post("/api/coaching", async (req, res) => {
     return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
   }
 
-  const { log } = req.body;
-  if (!log || !Array.length) {
+  const { log, context } = req.body;
+  if (!log || !log.length) {
     return res.status(400).json({ error: "No training log provided" });
   }
 
@@ -251,6 +251,7 @@ app.post("/api/coaching", async (req, res) => {
     const parts = [`Date: ${entry.date}`, `Session: ${entry.session}`];
     if (entry.wod) parts.push(`WOD: ${entry.wod}`);
     if (entry.shoulder && entry.shoulder !== 'none') parts.push(`Shoulder: ${entry.shoulder}`);
+    if (entry.avgHr) parts.push(`Avg HR: ${entry.avgHr}bpm`);
     if (entry.notes) parts.push(`Notes: ${entry.notes}`);
     if (entry.whoop?.recovery) {
       const r = entry.whoop.recovery;
@@ -265,6 +266,8 @@ app.post("/api/coaching", async (req, res) => {
     return parts.join(' | ');
   }).join('\n');
 
+  const weekInfo = context?.currentWeek ? `Currently in Week ${context.currentWeek}, Block: ${context.blockName}. Today's scheduled session: ${context.todaySchedule}.` : '';
+
   try {
     const apiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -278,16 +281,27 @@ app.post("/api/coaching", async (req, res) => {
         max_tokens: 1024,
         messages: [{
           role: "user",
-          content: `You are an elite CrossFit and endurance coach analyzing a 14-day training log with Whoop biometric data. The athlete has a recurring shoulder issue to monitor.
+          content: `You are an elite CrossFit and longevity coach analyzing Oscar's training data.
 
-Analyze this training log and provide:
-1. RECOVERY TREND — are they trending up or down? Any red flags?
-2. TRAINING LOAD — is volume/intensity appropriate given recovery scores?
-3. SHOULDER STATUS — any concerning patterns with the shoulder?
-4. SLEEP — is sleep quality supporting recovery?
-5. RECOMMENDATION — what should they do today/this week?
+ATHLETE PROFILE:
+- Oscar, age 46, male
+- AC joint shoulder injury (right) — recurring, must be monitored closely
+- Goal: longevity-focused fitness, "harder to kill" philosophy
+- 12-week program: Feb 23 – May 17, 2026
+- Schedule: CrossFit Mon/Wed/Fri/Sat, Zone 2 cardio Tue, VO2max intervals Thu, Rest Sun
+- Blocks: Foundation (wk 1-4), Build (wk 5-8), Peak (wk 9-12)
+- Zone 2 target HR: 105-135 bpm
+${weekInfo}
 
-Keep it concise, direct, and actionable. Use short paragraphs. No fluff.
+Analyze his last 14 days and provide:
+1. RECOVERY TREND — trending up or down? Red flags in HRV or RHR?
+2. TRAINING LOAD — is volume/intensity appropriate for his recovery scores and current block?
+3. SHOULDER WATCH — any concerning patterns? Escalation from dull to sharp? Days needing modification?
+4. SLEEP — is sleep quality supporting recovery? Below 70% is a red flag.
+5. ZONE 2 COMPLIANCE — if Zone 2 sessions logged, is HR staying in 105-135 range?
+6. TODAY'S CALL — specific recommendation for today given recovery and schedule.
+
+Be direct, concise, and coach-like. No fluff. Talk to Oscar like his coach.
 
 TRAINING LOG:
 ${logSummary}`
